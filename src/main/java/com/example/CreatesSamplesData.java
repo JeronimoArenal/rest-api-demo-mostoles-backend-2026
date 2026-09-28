@@ -2,6 +2,9 @@ package com.example;
 
 import java.math.BigDecimal;
 
+import com.example.spring_security_jwt.model.ERole;
+import com.example.spring_security_jwt.model.Role;
+import com.example.spring_security_jwt.repository.RoleRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,10 +19,15 @@ public class CreatesSamplesData {
 
     @Bean
     public CommandLineRunner samplesData(ProductService productService,
-        PresentationService presentationService) {
+        PresentationService presentationService,
+        RoleRepository roleRepository) {
             
             
         return args -> {
+
+            // Creamos dos Roles
+            roleRepository.save(Role.builder().name(ERole.ROLE_USER).build());
+            roleRepository.save(Role.builder().name(ERole.ROLE_ADMIN).build());
 
             // Crearemos dos presentaciones, por unidad y por decenas, para los productos
             presentationService.save(Presentation.builder()
