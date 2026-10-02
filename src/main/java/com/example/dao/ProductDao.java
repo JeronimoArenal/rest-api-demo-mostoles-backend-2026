@@ -1,7 +1,9 @@
 package com.example.dao;
 
 import java.util.List;
+import java.util.Optional;
 
+import com.example.entities.Presentation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -53,4 +55,6 @@ public interface ProductDao extends JpaRepository<Product, Integer> {
     // recupera el producto con su presentacion correspondiente
     @Query(value = "select p from Product p left join fetch p.presentation where p.id = :id")
     public Product findById(int id);
+
+    Optional<Product> findByName(String name);
 }

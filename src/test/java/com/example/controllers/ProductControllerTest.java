@@ -13,12 +13,14 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.spring_security_jwt.payload.request.LoginRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.Sort;
@@ -38,7 +40,7 @@ import com.example.utilities.FileUtil;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
-@WebMvcTest(ProductController.class)
+//@WebMvcTest(ProductController.class)
 
 /**
  * La anotacion anterior es la recomendada para implementar test de Integracion,
@@ -48,6 +50,7 @@ import tools.jackson.databind.ObjectMapper;
  * Security porque no carga todo el contexto de Spring. Cuando se implemente la
  * seguridad, comentaremos esta anotacion y utilizaremos @SpringBootTest
  */
+@SpringBootTest
 
 /*
  * La siguiente anotacion se utiliza cuando queremos utilizar una base de datos
@@ -87,7 +90,21 @@ class ProductControllerTest {
 	
 	@BeforeEach
 	void setUp() {
-		
+		/**
+		 * Necesitamos obtener un token valido para presentarlo en cada test
+		 */
+		LoginRequest logginRequest = LoginRequest.builder()
+				.username("admin1")
+				.password("123456")
+				.build();
+
+		/**
+		 * El objeto anterior, tiene que ser convertido a formato JSON, para llo caul utillizamos el ObjectMapper
+		 * que convierte a Strin el formato JSON
+		 */
+
+		String jsonLLoginRequest = objectMapper.writeValueAsString(logginRequest);
+
 		presentation1 = Presentation.builder()
 				.name("decenas")
 				.description("Por decenas")
