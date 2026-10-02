@@ -49,7 +49,6 @@ public class AuthController {
         return ResponseEntity.ok("AUTH CONTROLLER FUNCIONA");
     }
 
-
     //....................... registerUser .......................................
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(

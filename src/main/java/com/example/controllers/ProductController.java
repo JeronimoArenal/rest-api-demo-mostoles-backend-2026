@@ -212,10 +212,8 @@ public class ProductController {
 			return responseEntity;
 		}
 
-		// Persistimos el producto porque si hemos llegado a este punto es que esta bien
-		// formado
-		// Pero antes vamos a comprobar si hemos recibido imagen del producto, para
-		// guardarla
+		// Persistimos el producto porque si hemos llegado a este punto es que esta bien formado
+		// Pero antes vamos a comprobar si hemos recibido imagen del producto, para guardarla
 		// en el sistema de archivo (file system)
 
 		if (imagenDelProducto != null && !imagenDelProducto.isEmpty()) {
@@ -349,7 +347,6 @@ public class ProductController {
 		Product productoParaActualizar = productService.findById(product_id);
 
 		if (productoParaActualizar == null) {
-
 			responseAsMap.put("mensaje de error: ", "producto con id: " + product_id + " no encontrado.");
 			return new ResponseEntity<Map<String, Object>>(responseAsMap, HttpStatus.NOT_FOUND);
 		}

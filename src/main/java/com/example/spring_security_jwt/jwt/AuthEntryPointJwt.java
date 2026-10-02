@@ -15,20 +15,13 @@ import java.io.IOException;
 @Component
 public class AuthEntryPointJwt implements AuthenticationEntryPoint {
 
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(AuthEntryPointJwt.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthEntryPointJwt.class);
 
     @Override
-    public void commence(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationException authException)
-            throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException authException)throws IOException, ServletException {
 
-        LOGGER.error(
-                "Error de no autorizado: {}",
-                authException.getMessage()
-        );
+        LOGGER.error("Error de no autorizado: {}", authException.getMessage());
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

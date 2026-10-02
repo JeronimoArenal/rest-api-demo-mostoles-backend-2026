@@ -1,4 +1,4 @@
-package com.example.spring_security_jwt.security;
+package com.example.spring_security_jwt.config;
 
 import com.example.spring_security_jwt.jwt.AuthEntryPointJwt;
 import com.example.spring_security_jwt.jwt.AuthTokenFilter;
