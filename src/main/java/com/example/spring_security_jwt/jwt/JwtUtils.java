@@ -52,21 +52,28 @@ public class JwtUtils {
     }
 
 
-    public boolean validateJwtToken(String authToken){
+    public boolean validateJwtToken(String authToken) {
         try {
-            Jwts.parser().verifyWith((SecretKey) key()).build().parse(authToken);
+            Jwts.parser()
+                    .verifyWith((SecretKey) key())
+                    .build()
+                    .parseSignedClaims(authToken);
 
-        } catch (MalformedJwtException e){
-            LOGGER.error("Invlid JWT token: {} ", e.getMessage());
+            return true;
+
+        } catch (MalformedJwtException e) {
+            LOGGER.error("Invalid JWT token: {}", e.getMessage());
+
         } catch (ExpiredJwtException e) {
-            LOGGER.error("JWT token is expired: {} ", e.getMessage());
+            LOGGER.error("JWT token is expired: {}", e.getMessage());
+
         } catch (UnsupportedJwtException e) {
-            LOGGER.error("JWT token is not supported: {} ", e.getMessage());
+            LOGGER.error("JWT token is not supported: {}", e.getMessage());
+
         } catch (IllegalArgumentException e) {
-            LOGGER.error("JWT cl    aims strings is empty: {} ", e.getMessage());
+            LOGGER.error("JWT claims string is empty: {}", e.getMessage());
         }
 
         return false;
-
     }
 }

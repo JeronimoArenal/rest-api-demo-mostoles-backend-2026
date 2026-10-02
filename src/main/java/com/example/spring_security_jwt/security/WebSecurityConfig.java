@@ -58,7 +58,8 @@ public class WebSecurityConfig {
                 );
 
         // Añadimos tu filtro JWT antes del filtro de usuario/contraseña estándar
-        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(authenticationJwtTokenFilter(),
+                UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

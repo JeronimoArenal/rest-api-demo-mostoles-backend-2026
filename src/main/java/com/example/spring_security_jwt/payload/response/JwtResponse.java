@@ -4,10 +4,9 @@ import lombok.*;
 
 import java.util.Set;
 
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
 @Builder
 public class JwtResponse {
 
@@ -15,6 +14,6 @@ public class JwtResponse {
     private final String type = "Bearer";
     private Long id;
     private String username;
-    private String password;
+    private String email;
     private Set<String> roles;
 }

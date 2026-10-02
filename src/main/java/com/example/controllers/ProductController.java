@@ -16,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -96,7 +97,9 @@ public class ProductController {
 	 * ordenados.
 	 * 
 	 */
+	//....................... dameProductos .......................................
 	@GetMapping
+	@PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
 	public ResponseEntity<Map<String, Object>> dameProductos(
 			@RequestParam(name = "page", required = false) Integer page,
 			@RequestParam(name = "size", required = false) Integer size) {
@@ -135,7 +138,9 @@ public class ProductController {
 	 * 
 	 * Donde el valor 1 al final del end point seria el id del producto
 	 */
+	//....................... findProductById .......................................
 	@GetMapping("/{id}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	public ResponseEntity<Map<String, Object>> findProductById(
 			@PathVariable(name = "id", required = true) int product_id) {
 
@@ -180,8 +185,10 @@ public class ProductController {
 	 * @throws IOException
 	 * 
 	 */
+	//....................... saveProduct .......................................
 	@PostMapping(consumes = "multipart/form-data")
 	@Transactional
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Map<String, Object>> saveProduct(@Valid @RequestPart Product product, BindingResult result,
 			@RequestPart(name = "file", required = false) MultipartFile imagenDelProducto) throws IOException {
 
@@ -268,7 +275,9 @@ public class ProductController {
 	 * Metodo que recupera la imagen de un producto, dado el codigo que tiene como
 	 * prefijo el nombre de la imagen
 	 */
+	//....................... downloadFile .......................................
 	@GetMapping("/fileDownLoad/{fileCode}")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<?> downloadFile(@PathVariable String fileCode) {
 
 		Resource resource = null;
@@ -306,68 +315,10 @@ public class ProductController {
 	 * el verbo utilizado del protocolo HTTP sera diferente, PUT en este caso.
 	 * 
 	 */
-
-//	@PutMapping("/{id}")
-//	@Transactional
-//	public ResponseEntity<Map<String, Object>> updateProduct(@Valid @RequestBody Product product, BindingResult results,
-//			@PathVariable Integer id) {
-//
-//		ResponseEntity<Map<String, Object>> responseEntity = null;
-//		Map<String, Object> responseAsMap = new HashMap<>();
-//
-//		// Comprobar si el producto recibido en el cuerpo de la peticion tiene errores
-//		if (results.hasErrors()) {
-//
-//			// Recuperar todos los errores que tiene el producto
-//			List<ObjectError> objectErrors = results.getAllErrors();
-//
-//			// Hay que recorrer la lista de ObjectError para recuperar los mensajes de error
-//			// por defecto que le voy a mostrar al cliente que ha hecho la peticion,
-//			// es decir, que ha enviado el producto mal formado
-//
-//			// Los mensajes de error tienen que ser almacenados en una lista donde cada
-//			// elemento de la lista
-//			// sea un String
-//
-//			List<String> mensajesError = new ArrayList<>();
-//
-//			objectErrors.stream().forEach(objectError -> mensajesError.add(objectError.getDefaultMessage()));
-//
-//			responseAsMap.put("errores", mensajesError);
-//			responseAsMap.put("product", product);
-//
-//			responseEntity = new ResponseEntity<Map<String, Object>>(responseAsMap, HttpStatus.BAD_REQUEST);
-//
-//			return responseEntity;
-//
-//		}
-//
-//		/**
-//		 * Si no hay errores vamos a actualizar el producto recibido y devolver
-//		 * informacion al respecto como se requiere para una API REST
-//		 */
-//
-//		try {
-//			product.setId(id);
-//			Product productoModoficado = productService.save(product);
-//			String mensaje = "El producto ha sido modificado exitosamente";
-//			responseAsMap.put("mensaje", mensaje);
-//			responseAsMap.put("product", productoModoficado);
-//			responseEntity = new ResponseEntity<Map<String, Object>>(responseAsMap, 	
-//					HttpStatus.OK);
-//		} catch (DataAccessException e) {
-//			String errorMessage = "El producto no se pudo modificar y la causa mas probable es: "
-//					+ e.getMostSpecificCause();
-//			responseAsMap.put("error", errorMessage);
-//			responseEntity = new ResponseEntity<Map<String, Object>>(responseAsMap, 
-//					HttpStatus.INTERNAL_SERVER_ERROR);
-//		}
-//
-//		return responseEntity;
-//	}
-
+	//....................... updateProduct .......................................
 	@PutMapping(value = "/{id}", consumes = "multipart/form-data")
 	@Transactional
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Map<String, Object>> updateProduct(@Valid @RequestPart Product product, BindingResult result,
 			@RequestPart(name = "file", required = false) MultipartFile imagenDelProducto,
 			@PathVariable(name = "id", required = true) int product_id) throws IOException {
@@ -458,11 +409,13 @@ public class ProductController {
 
 	}
 	
-    /**==============================================================================================
+    /**
      * Metodo para eliminar un producto dado el id
      */
-    @DeleteMapping("/{id}")
+	//....................... deleteProducto .......................................
+	@DeleteMapping("/{id}")
     @Transactional
+	@PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> deleteProducto(@PathVariable Integer id) {
 
         ResponseEntity<Map<String, Object>> responseEntity = null;
