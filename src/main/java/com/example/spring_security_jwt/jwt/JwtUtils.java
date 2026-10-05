@@ -17,7 +17,9 @@ import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
 
-
+/**
+ * Fabrica y comprueba el JWT. Su misión es gestionar el token JWT.
+ */
 @Component
 public class JwtUtils {
 
@@ -29,7 +31,7 @@ public class JwtUtils {
     @Value("${demo.app.jwtExpirationMs}")
     private int jwtExpirationMS;
 
-    // ===================== GENERAR TOKEN =====================
+    // ===================== Generar un JWT =====================
     // Nuevo método que acepta los claims (roles) y el username
     public String generateJwtToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
@@ -46,16 +48,18 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
+
+    // ===================== Extraer el usuario del JWT =====================
     public String getUsernameFromJwtToken(String token){
         return Jwts.parser().verifyWith((SecretKey) key()).build()
                 .parseSignedClaims(token).getPayload().getSubject();
     }
 
 
+    // ===================== Validar el JWT =====================
     public boolean validateJwtToken(String authToken) {
         try {
-            Jwts.parser()
-                    .verifyWith((SecretKey) key())
+            Jwts.parser().verifyWith((SecretKey) key())
                     .build()
                     .parseSignedClaims(authToken);
 

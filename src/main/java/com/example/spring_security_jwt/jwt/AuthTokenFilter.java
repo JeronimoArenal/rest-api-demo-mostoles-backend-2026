@@ -15,15 +15,19 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * RESOURCE SERVER
+ *
+ * Intercepta las peticiones -> Es un filtro HTTP:
+ * En cada petición, busca el JWT, pide a JwtUtils que lo valide y, si es correcto,
+ * le dice a Spring Security quién es el usuario.
+ */
 @RequiredArgsConstructor
 public class AuthTokenFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
     private final UserDetailsServiceImpl userDetailsServiceImpl;
 
-    /**
-     * Método principal que intercepta la petición HTTP entrante.
-     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -35,7 +39,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 // Extraemos el nombre de usuario embebido dentro del propio token
                 String username = jwtUtils.getUsernameFromJwtToken(jwt);
-                // Buscamos los detalles y roles de ese usuario en la Base de Datos
+
+                // PROBLEMA: ¡Consulta a la BD en cada clic del usuario!
                 UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(username);
 
                 // Creamos el objeto principal de autenticación de Spring Security con los datos del usuario.

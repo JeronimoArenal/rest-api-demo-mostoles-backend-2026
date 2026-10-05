@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.spring_security_jwt.payload.request.LoginRequest;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
 import com.example.entities.Presentation;
@@ -45,7 +47,7 @@ import tools.jackson.databind.ObjectMapper;
 /**
  * La anotacion anterior es la recomendada para implementar test de Integracion,
  * a la capa de controladores que conlleva la realizacion de peticiones HTTP.
- * 
+ *
  * Esta anotacion no serviria si tuviesemos implementada la seguridad con Spring
  * Security porque no carga todo el contexto de Spring. Cuando se implemente la
  * seguridad, comentaremos esta anotacion y utilizaremos @SpringBootTest
@@ -77,44 +79,53 @@ class ProductControllerTest {
 
 	@MockitoBean
 	FileDownloadUtil fileDownloadUtil;
-	
+
 	@MockitoBean
 	FileUtil fileUtil;
-	
+
 	@Autowired
 	ObjectMapper objectMapper;
-	
+
 	List<Product> products = new ArrayList<>();
 	Presentation presentation1, presentation2;
 	Product product1, product2;
-	
+
+	String token;
+
 	@BeforeEach
-	void setUp() {
-		/**
-		 * Necesitamos obtener un token valido para presentarlo en cada test
-		 */
+	void setUp() throws Exception {
+		/* Necesitamos obtener un token válido para presentarlo en cada test */
 		LoginRequest logginRequest = LoginRequest.builder()
-				.username("admin1")
+				.username("admin")
 				.password("123456")
 				.build();
 
-		/**
-		 * El objeto anterior, tiene que ser convertido a formato JSON, para llo caul utillizamos el ObjectMapper
+		/** El objeto anterior,tiene que ser convertido a formato JSON, para lo cual utilizamos el ObjectMapper
 		 * que convierte a Strin el formato JSON
 		 */
-
 		String jsonLLoginRequest = objectMapper.writeValueAsString(logginRequest);
 
+		ResultActions resultActions = this.mockMvc.perform(post("/api/auth/signin")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(jsonLLoginRequest));
+
+		//Extraemos el token de la respuesta a la request anterior.
+		MvcResult mvcResult = resultActions.andDo(print()).andReturn();
+
+		String contentAsString = mvcResult.getResponse().getContentAsString();
+		JSONObject jsonObject = new JSONObject(contentAsString);
+		this.token = "Bearer " + jsonObject.getString("token");
+
+
+		//----------------------------------------------------------------------------------------------
 		presentation1 = Presentation.builder()
 				.name("decenas")
 				.description("Por decenas")
 				.build();
-		
 		presentation2 = Presentation.builder()
 				.name("unidades")
 				.description("Por unidades")
 				.build();
-			
 		product1 = Product.builder()
 				.name("Camara")
 				.description("HP Camara")
@@ -123,8 +134,6 @@ class ProductControllerTest {
 				.productImage(null)
 				.presentation(presentation1)
 				.build();
-		
-			
 		product2 = Product.builder()
 				.name("Frigorifico")
 				.description("General Electric")
@@ -133,7 +142,7 @@ class ProductControllerTest {
 				.productImage(null)
 				.presentation(presentation2)
 				.build();
-		
+
 		products.add(product1);
 		products.add(product2);
 	}
@@ -143,7 +152,6 @@ class ProductControllerTest {
 	void testFindAll() throws Exception {
 
 		// given
-		
 		given(productService.findAll(Sort.by("name")))
 			.willReturn(products);
 
@@ -152,9 +160,9 @@ class ProductControllerTest {
 
 		ResultActions response = mockMvc
 				.perform(get("/products")
-				.accept(MediaType.APPLICATION_JSON));
+				.accept(MediaType.APPLICATION_JSON)
+				.header("Authorization", this.token));
 		// then
-
 		response.andExpect(status().isOk()).andDo(print())
 				.andExpect(jsonPath("$.products.size()",
 						is(products.size())));
@@ -164,59 +172,61 @@ class ProductControllerTest {
 	@Test
 	@DisplayName("Controller Test para Persistir un Producto")
 	void testSaveProduct()  {
-		
+
 		// given
 		given(productService.save(any(Product.class)))
 			.willAnswer(invocation -> invocation.getArgument(0));
-		
+
 		// when
-		
+
 		/* Convertir el producto a formato JSON, es decir, una cadena (String)
-		 * en formato de JSON, lo cual hace el objectMapper que hemos inyectado como 
+		 * en formato de JSON, lo cual hace el objectMapper que hemos inyectado como
 		 * dependencia al principio de la clase bajo Test */
-		
+
 		String jsonStringProduct = objectMapper.writeValueAsString(product1);
-		
+
 		MockMultipartFile bytesArrayProduct = new MockMultipartFile(
-				    "product", 
-				    null, 
-				    "application/json", 
+				    "product",
+				    null,
+				    "application/json",
 				    jsonStringProduct.getBytes());
-		
+
 		try {
 				mockMvc
 				    .perform(multipart("/products")
 					.file(bytesArrayProduct)
-					.file("file", null))			    
+					.file("file", null)
+					.header("Authorization", this.token))
 				    	.andDo(print())
 				    	.andExpect(status().isCreated())
 				    	.andExpect(jsonPath("$.product.name",
 		  			is(product1.getName())));
-		  	
-		  
+
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		// then
-		
+
 	}
 
 	@Test
 	@DisplayName("Controller Test para recuperar un producto por su ID")
 	void testRecuperarProductoPorSuID() throws Exception {
-		
+
 		// given
-		
+
 		int productId = 1;
-		
+
 		given(productService.findById(productId))
 			.willReturn(product1);
-		
+
 		// when
 		mockMvc.perform(get("/products/{id}",
-				productId))
+				productId)
+				.header("Authorization", this.token))
 				.andDo(print())
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$['producto encontrado: '].name",
@@ -226,18 +236,18 @@ class ProductControllerTest {
 	@Test
 	@DisplayName("Controller Test Producto no encontrado")
 	void testProductoNoEncontrado() throws Exception {
-		
+
 		// given
 		given(productService.findById(20)).willReturn(null);
-		
+
 		// when
-		
-		mockMvc.perform(get("/products/{id}", 20))
-			.andDo(print())
+		mockMvc.perform(get("/products/{id}", 20)
+						.header("Authorization", this.token))
+				.andDo(print())
 			.andExpect(status().isNotFound());
 	}
-	
-    @Test 
+
+    @Test
     @DisplayName("Controller Test que actualiza un producto con su imagen")
     void testUpdateProduct() throws Exception{
 
@@ -250,7 +260,7 @@ class ProductControllerTest {
         //when
         String jsonStringProduct = objectMapper.writeValueAsString(product1);
 
-        MockMultipartFile bytesArrayProduct = new MockMultipartFile("product", 
+        MockMultipartFile bytesArrayProduct = new MockMultipartFile("product",
                             null,
                             "application/json",
                             jsonStringProduct.getBytes());
@@ -262,7 +272,8 @@ class ProductControllerTest {
                             return request;
                         })
                         .file("image", null)
-                        .file(bytesArrayProduct));
+                        .file(bytesArrayProduct)
+						.header("Authorization", this.token));
 
         //then
         response.andDo(print())
@@ -271,11 +282,11 @@ class ProductControllerTest {
             		is(product1.getName())))
             .andExpect(jsonPath("$['producto actualizado: '].description",
             		is(product1.getDescription())));
-        
+
 
     }
-    
-    @Test 
+
+    @Test
     @DisplayName("Controller Test que elimina un producto")
     void testDeleteProduct() throws Exception{
 
@@ -286,11 +297,12 @@ class ProductControllerTest {
         doNothing().when(productService).delete(product1);
 
         //when
-        mockMvc.perform(delete("/products/{id}", ProductId))
+        mockMvc.perform(delete("/products/{id}", ProductId)
+				.header("Authorization", this.token))
                 .andExpect(status().isOk());
 
     }
-	
+
 }
 
 

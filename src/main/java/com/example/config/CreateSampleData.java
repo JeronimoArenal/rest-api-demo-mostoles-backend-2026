@@ -21,7 +21,7 @@ import java.math.BigDecimal;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class DataInitializer implements CommandLineRunner {
+public class CreateSampleData implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
@@ -41,90 +41,35 @@ public class DataInitializer implements CommandLineRunner {
         // =========================================================
         // ROLES
         // =========================================================
-
         Role adminRole = createRole(ERole.ROLE_ADMIN);
         Role userRole = createRole(ERole.ROLE_USER);
 
         // =========================================================
         // USUARIOS
         // =========================================================
-
-        createUserIfNotExists(
-                "admin",
-                "admin@test.com",
-                "123456",
-                adminRole
-        );
-
-        createUserIfNotExists(
-                "user",
-                "user@test.com",
-                "123456",
-                userRole
-        );
+        createUserIfNotExists("admin", "admin@test.com", "123456", adminRole);
+        createUserIfNotExists("user", "user@test.com", "123456", userRole);
 
         // =========================================================
         // PRESENTACIONES
         // =========================================================
-
-        Presentation botella = createPresentation(
-                "Botella",
-                "Producto presentado en botella"
-        );
-
-        Presentation caja = createPresentation(
-                "Caja",
-                "Producto presentado en caja"
-        );
-
-        Presentation bolsa = createPresentation(
-                "Bolsa",
-                "Producto presentado en bolsa"
-        );
+        Presentation botella = createPresentation("Botella", "Producto presentado en botella");
+        Presentation caja = createPresentation("Caja", "Producto presentado en caja");
+        Presentation bolsa = createPresentation("Bolsa", "Producto presentado en bolsa");
 
         // =========================================================
         // PRODUCTOS
         // =========================================================
-
-        createProduct(
-                "Agua Mineral",
-                "Agua mineral natural de 1 litro",
-                100,
-                new BigDecimal("1.20"),
-                botella
-        );
-
-        createProduct(
-                "Zumo de Naranja",
-                "Zumo de naranja natural",
-                50,
-                new BigDecimal("2.50"),
-                botella
-        );
-
-        createProduct(
-                "Café Molido",
-                "Café molido de tueste natural",
-                75,
-                new BigDecimal("4.95"),
-                caja
-        );
-
-        createProduct(
-                "Té Verde",
-                "Té verde en bolsitas individuales",
-                40,
-                new BigDecimal("3.25"),
-                caja
-        );
-
-        createProduct(
-                "Arroz",
-                "Arroz blanco de grano largo",
-                80,
-                new BigDecimal("2.10"),
-                bolsa
-        );
+        createProduct("Agua Mineral",
+                "Agua mineral natural de 1 litro", 100, new BigDecimal("1.20"), botella);
+        createProduct("Zumo de Naranja",
+                "Zumo de naranja natural", 50, new BigDecimal("2.50"), botella);
+        createProduct("Café Molido",
+                "Café molido de tueste natural", 75, new BigDecimal("4.95"), caja);
+        createProduct("Té Verde",
+                "Té verde en bolsitas individuales", 40, new BigDecimal("3.25"), caja);
+        createProduct("Arroz",
+                "Arroz blanco de grano largo", 80, new BigDecimal("2.10"), bolsa);
 
         log.info("========================================");
         log.info("Datos inicializados correctamente.");
@@ -134,22 +79,16 @@ public class DataInitializer implements CommandLineRunner {
     // =============================================================
     // CREAR ROL
     // =============================================================
-
     private Role createRole(ERole roleName) {
 
         return roleRepository.findByName(roleName)
                 .orElseGet(() -> {
-
                     Role role = Role.builder()
                             .name(roleName)
                             .build();
 
                     Role savedRole = roleRepository.save(role);
-
-                    log.info(
-                            "Rol '{}' creado.",
-                            roleName
-                    );
+                    log.info("Rol '{}' creado.", roleName);
 
                     return savedRole;
                 });
@@ -158,20 +97,10 @@ public class DataInitializer implements CommandLineRunner {
     // =============================================================
     // CREAR USUARIO
     // =============================================================
-
-    private void createUserIfNotExists(
-            String username,
-            String email,
-            String password,
-            Role role) {
+    private void createUserIfNotExists(String username, String email, String password, Role role) {
 
         if (userRepository.findByUsername(username).isPresent()) {
-
-            log.info(
-                    "El usuario '{}' ya existe.",
-                    username
-            );
-
+            log.info("El usuario '{}' ya existe.", username);
             return;
         }
 
@@ -182,42 +111,24 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
 
         user.getRoles().add(role);
-
         User savedUser = userRepository.save(user);
 
-        log.info(
-                "Usuario '{}' creado con ID {} y rol '{}'.",
-                savedUser.getUsername(),
-                savedUser.getId(),
-                role.getName()
-        );
+        log.info("Usuario '{}' creado con ID {} y rol '{}'.", savedUser.getUsername(), savedUser.getId(), role.getName());
     }
 
     // =============================================================
     // CREAR PRESENTACIÓN
     // =============================================================
+    private Presentation createPresentation(String name, String description) {
 
-    private Presentation createPresentation(
-            String name,
-            String description) {
-
-        return presentationDao
-                .findByName(name)
+        return presentationDao.findByName(name)
                 .orElseGet(() -> {
-
                     Presentation presentation = new Presentation();
-
                     presentation.setName(name);
                     presentation.setDescription(description);
 
-                    Presentation saved =
-                            presentationDao.save(presentation);
-
-                    log.info(
-                            "Presentación '{}' creada.",
-                            name
-                    );
-
+                    Presentation saved = presentationDao.save(presentation);
+                    log.info("Presentación '{}' creada.", name);
                     return saved;
                 });
     }
@@ -225,21 +136,11 @@ public class DataInitializer implements CommandLineRunner {
     // =============================================================
     // CREAR PRODUCTO
     // =============================================================
-
-    private Product createProduct(
-            String name,
-            String description,
-            Integer stock,
-            BigDecimal price,
-            Presentation presentation) {
+    private Product createProduct(String name, String description, Integer stock, BigDecimal price,
+                                  Presentation presentation) {
 
         if (productDao.findByName(name).isPresent()) {
-
-            log.info(
-                    "El producto '{}' ya existe.",
-                    name
-            );
-
+            log.info("El producto '{}' ya existe.", name);
             return productDao.findByName(name)
                     .orElseThrow();
         }
@@ -253,13 +154,7 @@ public class DataInitializer implements CommandLineRunner {
         product.setPresentation(presentation);
 
         Product saved = productDao.save(product);
-
-        log.info(
-                "Producto '{}' creado con presentación '{}'.",
-                name,
-                presentation.getName()
-        );
-
+        log.info("Producto '{}' creado con presentación '{}'.", name, presentation.getName());
         return saved;
     }
 }
