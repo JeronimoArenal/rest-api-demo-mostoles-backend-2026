@@ -36,6 +36,7 @@ import com.example.utilities.FileDownloadUtil;
 import com.example.utilities.FileUploadUtil;
 import com.example.utilities.FileUtil;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ import lombok.RequiredArgsConstructor;
  */
 
 @RestController
+@Tag(name = "Productos", description = "CRUD de productos con HATEOAS (los de escritura requieren ROLE_ADMIN)")
 
 /**
  * Una API REST esta orientada al recurso, es decir, que el controlador necesita

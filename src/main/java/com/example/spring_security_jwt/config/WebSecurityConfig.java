@@ -76,6 +76,10 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Permite registrarse y loguearse sin token
                         .requestMatchers("/error").permitAll()
+                        // Documentación de la API (OpenAPI, Swagger UI y Scalar): también exige
+                        // token JWT, no es pública. Sin cabecera "Authorization" -> 401
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**",
+                                "/scalar", "/scalar/**").authenticated()
                         .anyRequest().authenticated()               // Todo lo demás requiere estar autenticado
                 );
 

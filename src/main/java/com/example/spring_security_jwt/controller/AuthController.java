@@ -11,6 +11,9 @@ import com.example.spring_security_jwt.payload.response.MessageResponse;
 import com.example.spring_security_jwt.repository.RoleRepository;
 import com.example.spring_security_jwt.repository.UserRepository;
 import com.example.spring_security_jwt.service.UserDetailsImpl;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -29,9 +32,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Autenticación JWT: registro, login y comprobación. Estos endpoints son
+ * públicos (no requieren token), por eso se anotan con
+ * {@code @SecurityRequirements({})} para excluirlos del requisito global
+ * {@code bearerAuth} que declara {@code OpenApiConfig}.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Autenticación", description = "Registro, login y comprobación JWT (endpoints públicos)")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -44,6 +54,8 @@ public class AuthController {
 
 
     @GetMapping("/test")
+    @Operation(summary = "Comprueba que el controlador de autenticación responde")
+    @SecurityRequirements({})
     public ResponseEntity<String> test() {
         LOGGER.info("========== ENTRE EN AUTH CONTROLLER ==========");
         return ResponseEntity.ok("AUTH CONTROLLER FUNCIONA");
@@ -51,6 +63,8 @@ public class AuthController {
 
     //....................... registerUser .......................................
     @PostMapping("/signup")
+    @Operation(summary = "Registra un nuevo usuario en la aplicación")
+    @SecurityRequirements({})
     public ResponseEntity<?> registerUser(
             @Valid @RequestBody SignupRequest signupRequest,
             BindingResult validationResults) {
@@ -106,6 +120,8 @@ public class AuthController {
 
     //....................... login .......................................
     @PostMapping("/signin")
+    @Operation(summary = "Inicia sesión y devuelve el token JWT (Bearer)")
+    @SecurityRequirements({})
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest, BindingResult
             result) {
         Authentication authentication = authenticationManager
