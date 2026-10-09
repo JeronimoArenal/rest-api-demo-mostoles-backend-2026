@@ -21,9 +21,9 @@ import org.springframework.context.annotation.Configuration;
  * </p>
  *
  * <p>
- * Además de pedir el token dentro de las UIs, el propio acceso a la
- * documentación (OpenAPI, Swagger UI y Scalar) está protegido: sin un JWT
- * válido esas rutas responden 401 (ver {@code WebSecurityConfig}).
+ * La documentación en sí (el contrato OpenAPI y las dos UIs) es de libre acceso
+ * en el navegador para poder consultarla; lo que sigue exigiendo el token JWT es
+ * la API (ver {@code WebSecurityConfig}).
  * </p>
  */
 @Configuration
@@ -47,8 +47,8 @@ public class OpenApiConfig {
 								(p. ej. admin/123456 o user/123456) y pégalo en el botón
 								"Authorize" de Swagger UI o en el panel "Authentication" de Scalar.
 
-								La propia documentación (OpenAPI, Swagger UI y Scalar) también está
-								protegida: sin token no se puede acceder a /v3/api-docs, /swagger-ui.html o /scalar.
+								La documentación (OpenAPI, Swagger UI y Scalar) es de libre lectura en el
+								navegador; la API en sí no: todos sus endpoints siguen exigiéndote un token válido.
 								""")
 						.version("1.0.0"))
 				.components(new Components().addSecuritySchemes(SECURITY_SCHEME_BEARER,

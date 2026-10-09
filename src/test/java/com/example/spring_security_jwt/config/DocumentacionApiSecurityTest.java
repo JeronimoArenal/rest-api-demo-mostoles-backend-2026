@@ -22,10 +22,15 @@ import org.springframework.test.web.servlet.MvcResult;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Comprueba que la documentación de la API (OpenAPI {@code /v3/api-docs},
- * Swagger UI y Scalar) también está protegida: sin un JWT válido todas esas
- * rutas responden 401, y el documento OpenAPI declara el esquema de seguridad
- * {@code bearerAuth} (HTTP Bearer / JWT) para que las UIs pidan el token.
+ * Comprueba el modelo de acceso a la documentación:
+ * <ul>
+ *   <li>La documentación (OpenAPI {@code /v3/api-docs}, Swagger UI y Scalar) es
+ *       de libre consulta en el navegador: responde 200/302 sin token.</li>
+ *   <li>El documento OpenAPI declara el esquema de seguridad {@code bearerAuth}
+ *       (HTTP Bearer / JWT) para que las UIs pidan el token al operar.</li>
+ *   <li>La API en sí sigue protegida: sin JWT responde 401 (p. ej.
+ *       {@code GET /products}).</li>
+ * </ul>
  *
  * <p>
  * Requiere MySQL (login real contra la base) y los usuarios sembrados por
@@ -63,18 +68,10 @@ class DocumentacionApiSecurityTest {
 	}
 
 	@Test
-	@DisplayName("OpenAPI /v3/api-docs sin token responde 401")
-	void apiDocsSinTokenEs401() throws Exception {
+	@DisplayName("OpenAPI /v3/api-docs sin token responde 200 y declara el security scheme bearerAuth")
+	void apiDocsDeclaraBearerJwt() throws Exception {
+
 		mockMvc.perform(get("/v3/api-docs"))
-				.andExpect(status().isUnauthorized());
-	}
-
-	@Test
-	@DisplayName("OpenAPI /v3/api-docs con token responde 200 y declara el security scheme bearerAuth")
-	void apiDocsConTokenDeclaraBearerJwt() throws Exception {
-
-		mockMvc.perform(get("/v3/api-docs")
-						.header("Authorization", token))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.openapi").exists())
 				.andExpect(jsonPath("$.info.title").value("API REST Móstoles Backend 2026"))
@@ -86,34 +83,32 @@ class DocumentacionApiSecurityTest {
 	}
 
 	@Test
-	@DisplayName("Swagger UI sin token responde 401 y con token redirige/abre la UI")
-	void swaggerUiRequiereToken() throws Exception {
+	@DisplayName("Swagger UI sin token abre la UI (redirige de /swagger-ui.html a /swagger-ui/index.html)")
+	void swaggerUiAbiertaSinToken() throws Exception {
 
-		// Sin token: la propia página de Swagger UI exige autenticación
+		// Sin token: /swagger-ui.html redirige (302) a la UI real
 		mockMvc.perform(get("/swagger-ui.html"))
-				.andExpect(status().isUnauthorized());
-
-		// Con token: /swagger-ui.html redirige (302) a la UI real
-		mockMvc.perform(get("/swagger-ui.html")
-						.header("Authorization", token))
 				.andExpect(status().is3xxRedirection());
 
-		// Con token: la UI de Swagger se sirve correctamente
-		mockMvc.perform(get("/swagger-ui/index.html")
-						.header("Authorization", token))
+		// Sin token: la UI de Swagger se sirve correctamente
+		mockMvc.perform(get("/swagger-ui/index.html"))
 				.andExpect(status().isOk());
 	}
 
 	@Test
-	@DisplayName("Scalar sin token responde 401 y con token responde 200")
-	void scalarRequiereToken() throws Exception {
+	@DisplayName("Scalar sin token responde 200")
+	void scalarAbiertoSinToken() throws Exception {
 
 		mockMvc.perform(get("/scalar"))
-				.andExpect(status().isUnauthorized());
-
-		mockMvc.perform(get("/scalar")
-						.header("Authorization", token))
 				.andExpect(status().isOk());
+	}
+
+	@Test
+	@DisplayName("La API sigue protegida: GET /products sin token responde 401")
+	void apiProtegidaSinToken() throws Exception {
+
+		mockMvc.perform(get("/products"))
+				.andExpect(status().isUnauthorized());
 	}
 
 	@Test

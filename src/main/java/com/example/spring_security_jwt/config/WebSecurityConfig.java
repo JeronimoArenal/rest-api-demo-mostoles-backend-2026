@@ -76,10 +76,12 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Permite registrarse y loguearse sin token
                         .requestMatchers("/error").permitAll()
-                        // Documentación de la API (OpenAPI, Swagger UI y Scalar): también exige
-                        // token JWT, no es pública. Sin cabecera "Authorization" -> 401
+                        // Documentación de la API (OpenAPI, Swagger UI y Scalar): accesible
+                        // desde el navegador sin token para poder ver el contrato. Las UIs
+                        // anuncian el esquema bearerAuth y piden el token para ejecutar
+                        // operaciones, y TODA la API /api/... y /products siguen exigiendo JWT
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**",
-                                "/scalar", "/scalar/**").authenticated()
+                                "/scalar", "/scalar/**").permitAll()
                         .anyRequest().authenticated()               // Todo lo demás requiere estar autenticado
                 );
 
