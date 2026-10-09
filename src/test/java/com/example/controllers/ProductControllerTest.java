@@ -222,6 +222,10 @@ class ProductControllerTest {
 
 		int productId = 1;
 
+		// El assembler genera el enlace self con el id de la entidad, por eso el
+		// producto devuelto por el servicio debe tener el id pedido en la URL
+		product1.setId(productId);
+
 		given(productService.findById(productId))
 			.willReturn(product1);
 

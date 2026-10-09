@@ -2,7 +2,6 @@ package com.example.controllers;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
@@ -11,7 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.dto.ProductoDto;
-import com.example.dto.ProductoMapper;
+import com.example.dto.ProductoModelAssembler;
 import com.example.entities.Product;
 import com.example.services.ProductService;
 import com.example.utilities.FileDownloadUtil;
@@ -70,16 +68,17 @@ public class ProductController {
 	private final FileUploadUtil fileUploadUtil;
 	private final FileDownloadUtil fileDownloadUtil;
 	private final FileUtil fileUtil;
-	private final ProductoMapper productoMapper;
+	private final ProductoModelAssembler productoModelAssembler;
 
 	/**
 	 * 
 	 * IMPORTANTE!!!
 	 * 
-	 * Con HATEOAS cada respuesta lleva enlaces hipermedia ("_links") generados
-	 * con EntityModel (recurso individual) o CollectionModel (coleccion),
-	 * mediante linkTo(methodOn(...)), para que el cliente pueda navegar por la
-	 * API sin conocer las URLs de memoria.
+	 * Con HATEOAS cada respuesta lleva enlaces hipermedia ("_links"). Para no
+	 * repetir la construccion de los enlaces en cada metodo, esta centralizada en
+	 * el componente ProductoModelAssembler (RepresentationModelAssemblerSupport),
+	 * que envuelve cada ProductoDto en un EntityModel y le agrega los enlaces self
+	 * y all-products.
 	 */
 
 	/**
@@ -118,20 +117,11 @@ public class ProductController {
 			products = productService.findAll(sort);
 		}
 
-		// Envolver cada producto en un EntityModel<ProductoDto> con sus enlaces
-		// hipermedia (se mapea la entidad JPA a su DTO de presentación)
-		List<EntityModel<ProductoDto>> entityModels = products.stream()
-				.map(product -> EntityModel.of(productoMapper.toProductoDto(product),
-						linkTo(methodOn(ProductController.class).findProductById(product.getId())).withSelfRel(),
-						linkTo(methodOn(ProductController.class).dameProductos(page, size)).withRel("products")))
-				.collect(Collectors.toList());
-
-		// Enlaces de la coleccion: a si misma y un enlace "all-products"
-		Link selfLink = linkTo(methodOn(ProductController.class).dameProductos(page, size)).withSelfRel();
-		Link allProductsLink = linkTo(methodOn(ProductController.class).dameProductos(null, null))
-				.withRel("all-products");
-
-		return CollectionModel.of(entityModels, selfLink, allProductsLink);
+		// El assembler transforma cada Product en un EntityModel<ProductoDto> con sus
+		// enlaces self y all-products; aqui solo se agregan los enlaces de la coleccion
+		return productoModelAssembler.toCollectionModel(products)
+				.add(linkTo(methodOn(ProductController.class).dameProductos(page, size)).withSelfRel(),
+						linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
 	}
 
 	/**
@@ -154,13 +144,9 @@ public class ProductController {
 
 			if (product != null) {
 
-				// Envolver el DTO del producto en un EntityModel con enlace a si mismo
-				// (self) y a la coleccion completa
-				EntityModel<ProductoDto> entityModel = EntityModel.of(productoMapper.toProductoDto(product),
-						linkTo(methodOn(ProductController.class).findProductById(product_id)).withSelfRel(),
-						linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
-
-				return ResponseEntity.ok(entityModel);
+				// El assembler devuelve el EntityModel<ProductoDto> con el enlace self y
+				// el enlace a la coleccion completa
+				return ResponseEntity.ok(productoModelAssembler.toModel(product));
 			}
 
 			return ResponseEntity.notFound().build();
@@ -203,12 +189,8 @@ public class ProductController {
 		try {
 			Product productoPersistido = productService.save(product);
 
-			// Envolver el DTO del producto persistido en un EntityModel con sus enlaces
-			EntityModel<ProductoDto> entityModel = EntityModel.of(productoMapper.toProductoDto(productoPersistido),
-					linkTo(methodOn(ProductController.class).findProductById(productoPersistido.getId())).withSelfRel(),
-					linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
-
-			return ResponseEntity.status(HttpStatus.CREATED).body(entityModel);
+			// El assembler devuelve el EntityModel<ProductoDto> del producto persistido
+			return ResponseEntity.status(HttpStatus.CREATED).body(productoModelAssembler.toModel(productoPersistido));
 
 		} catch (DataAccessException e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -298,12 +280,8 @@ public class ProductController {
 			product.setId(product_id);
 			Product productoAGuardar = productService.save(product);
 
-			// Envolver el DTO del producto actualizado en un EntityModel con sus enlaces
-			EntityModel<ProductoDto> entityModel = EntityModel.of(productoMapper.toProductoDto(productoAGuardar),
-					linkTo(methodOn(ProductController.class).findProductById(productoAGuardar.getId())).withSelfRel(),
-					linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
-
-			return ResponseEntity.ok(entityModel);
+			// El assembler devuelve el EntityModel<ProductoDto> del producto actualizado
+			return ResponseEntity.ok(productoModelAssembler.toModel(productoAGuardar));
 
 		} catch (DataAccessException e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -334,12 +312,9 @@ public class ProductController {
 
             productService.delete(productToDelete);
 
-            // Devolver el DTO del producto eliminado envuelto en un EntityModel, con
-            // enlace a la coleccion de productos
-            EntityModel<ProductoDto> entityModel = EntityModel.of(productoMapper.toProductoDto(productToDelete),
-                    linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
-
-            return ResponseEntity.ok(entityModel);
+            // El assembler devuelve el EntityModel<ProductoDto> del producto eliminado,
+            // con su enlace a la coleccion de productos
+            return ResponseEntity.ok(productoModelAssembler.toModel(productToDelete));
         } catch (DataAccessException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

@@ -18,7 +18,16 @@ import com.example.entities.Product;
 @Mapper(componentModel = "spring")
 public interface ProductoMapper {
 
-    /** Mapea la entidad JPA (persistencia) al DTO (presentación). */
+    /**
+     * Mapea la entidad JPA (persistencia) al DTO (presentación).
+     *
+     * <p>
+     * {@code presentationName} sale del nombre de la presentación: es seguro
+     * porque todos los accesos de lectura del DAO hacen fetch-join de la
+     * presentación y en save/update viene en memoria en el request.
+     * </p>
+     */
+    @Mapping(target = "presentationName", source = "presentation.name")
     ProductoDto toProductoDto(Product product);
 
     /**
