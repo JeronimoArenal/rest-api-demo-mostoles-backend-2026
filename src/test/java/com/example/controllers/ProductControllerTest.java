@@ -5,6 +5,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -164,8 +165,9 @@ class ProductControllerTest {
 				.header("Authorization", this.token));
 		// then
 		response.andExpect(status().isOk()).andDo(print())
-				.andExpect(jsonPath("$.products.size()",
-						is(products.size())));
+				.andExpect(jsonPath("$._embedded.productList.size()",
+						is(products.size())))
+				.andExpect(jsonPath("$._links.self.href").exists());
 
 	}
 
@@ -199,7 +201,7 @@ class ProductControllerTest {
 					.header("Authorization", this.token))
 				    	.andDo(print())
 				    	.andExpect(status().isCreated())
-				    	.andExpect(jsonPath("$.product.name",
+				    	.andExpect(jsonPath("$.name",
 		  			is(product1.getName())));
 
 
@@ -229,8 +231,10 @@ class ProductControllerTest {
 				.header("Authorization", this.token))
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$['producto encontrado: '].name",
-						is(product1.getName())));
+				.andExpect(jsonPath("$.name",
+						is(product1.getName())))
+				.andExpect(jsonPath("$._links.self.href",
+						containsString("/products/1")));
 	}
 
 	@Test
@@ -278,9 +282,9 @@ class ProductControllerTest {
         //then
         response.andDo(print())
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$['producto actualizado: '].name",
+            .andExpect(jsonPath("$.name",
             		is(product1.getName())))
-            .andExpect(jsonPath("$['producto actualizado: '].description",
+            .andExpect(jsonPath("$.description",
             		is(product1.getDescription())));
 
 
@@ -299,7 +303,8 @@ class ProductControllerTest {
         //when
         mockMvc.perform(delete("/products/{id}", ProductId)
 				.header("Authorization", this.token))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._links.all-products.href").exists());
 
     }
 
