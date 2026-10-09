@@ -165,7 +165,7 @@ class ProductControllerTest {
 				.header("Authorization", this.token));
 		// then
 		response.andExpect(status().isOk()).andDo(print())
-				.andExpect(jsonPath("$._embedded.productList.size()",
+				.andExpect(jsonPath("$._embedded.productoDtoList.size()",
 						is(products.size())))
 				.andExpect(jsonPath("$._links.self.href").exists());
 

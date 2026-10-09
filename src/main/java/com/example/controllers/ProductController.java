@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.dto.ProductoDto;
+import com.example.dto.ProductoMapper;
 import com.example.entities.Product;
 import com.example.services.ProductService;
 import com.example.utilities.FileDownloadUtil;
@@ -68,6 +70,7 @@ public class ProductController {
 	private final FileUploadUtil fileUploadUtil;
 	private final FileDownloadUtil fileDownloadUtil;
 	private final FileUtil fileUtil;
+	private final ProductoMapper productoMapper;
 
 	/**
 	 * 
@@ -93,7 +96,7 @@ public class ProductController {
 	//....................... dameProductos .......................................
 	@GetMapping
 	@PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
-	public CollectionModel<EntityModel<Product>> dameProductos(
+	public CollectionModel<EntityModel<ProductoDto>> dameProductos(
 			@RequestParam(name = "page", required = false) Integer page,
 			@RequestParam(name = "size", required = false) Integer size) {
 
@@ -115,9 +118,10 @@ public class ProductController {
 			products = productService.findAll(sort);
 		}
 
-		// Envolver cada producto en un EntityModel con sus enlaces hipermedia
-		List<EntityModel<Product>> entityModels = products.stream()
-				.map(product -> EntityModel.of(product,
+		// Envolver cada producto en un EntityModel<ProductoDto> con sus enlaces
+		// hipermedia (se mapea la entidad JPA a su DTO de presentación)
+		List<EntityModel<ProductoDto>> entityModels = products.stream()
+				.map(product -> EntityModel.of(productoMapper.toProductoDto(product),
 						linkTo(methodOn(ProductController.class).findProductById(product.getId())).withSelfRel(),
 						linkTo(methodOn(ProductController.class).dameProductos(page, size)).withRel("products")))
 				.collect(Collectors.toList());
@@ -142,7 +146,7 @@ public class ProductController {
 	//....................... findProductById .......................................
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-	public ResponseEntity<EntityModel<Product>> findProductById(@PathVariable(name = "id",
+	public ResponseEntity<EntityModel<ProductoDto>> findProductById(@PathVariable(name = "id",
 			required = true) int product_id) {
 
 		try {
@@ -150,9 +154,9 @@ public class ProductController {
 
 			if (product != null) {
 
-				// Envolver el producto en un EntityModel con enlace a si mismo (self) y a
-				// la coleccion completa
-				EntityModel<Product> entityModel = EntityModel.of(product,
+				// Envolver el DTO del producto en un EntityModel con enlace a si mismo
+				// (self) y a la coleccion completa
+				EntityModel<ProductoDto> entityModel = EntityModel.of(productoMapper.toProductoDto(product),
 						linkTo(methodOn(ProductController.class).findProductById(product_id)).withSelfRel(),
 						linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
 
@@ -180,7 +184,7 @@ public class ProductController {
 	@PostMapping(consumes = "multipart/form-data")
 	@Transactional
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<EntityModel<Product>> saveProduct(@Valid @RequestPart Product product, BindingResult result,
+	public ResponseEntity<EntityModel<ProductoDto>> saveProduct(@Valid @RequestPart Product product, BindingResult result,
 			@RequestPart(name = "file", required = false) MultipartFile imagenDelProducto) throws IOException {
 
 		// Comprobar si hay errores en el producto recibido
@@ -199,8 +203,8 @@ public class ProductController {
 		try {
 			Product productoPersistido = productService.save(product);
 
-			// Envolver el producto persistido en un EntityModel con sus enlaces
-			EntityModel<Product> entityModel = EntityModel.of(productoPersistido,
+			// Envolver el DTO del producto persistido en un EntityModel con sus enlaces
+			EntityModel<ProductoDto> entityModel = EntityModel.of(productoMapper.toProductoDto(productoPersistido),
 					linkTo(methodOn(ProductController.class).findProductById(productoPersistido.getId())).withSelfRel(),
 					linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
 
@@ -259,7 +263,7 @@ public class ProductController {
 	@PutMapping(value = "/{id}", consumes = "multipart/form-data")
 	@Transactional
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<EntityModel<Product>> updateProduct(@Valid @RequestPart Product product, BindingResult result,
+	public ResponseEntity<EntityModel<ProductoDto>> updateProduct(@Valid @RequestPart Product product, BindingResult result,
 			@RequestPart(name = "file", required = false) MultipartFile imagenDelProducto,
 			@PathVariable(name = "id", required = true) int product_id) throws IOException {
 
@@ -294,8 +298,8 @@ public class ProductController {
 			product.setId(product_id);
 			Product productoAGuardar = productService.save(product);
 
-			// Envolver el producto actualizado en un EntityModel con sus enlaces
-			EntityModel<Product> entityModel = EntityModel.of(productoAGuardar,
+			// Envolver el DTO del producto actualizado en un EntityModel con sus enlaces
+			EntityModel<ProductoDto> entityModel = EntityModel.of(productoMapper.toProductoDto(productoAGuardar),
 					linkTo(methodOn(ProductController.class).findProductById(productoAGuardar.getId())).withSelfRel(),
 					linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
 
@@ -313,7 +317,7 @@ public class ProductController {
 	@DeleteMapping("/{id}")
     @Transactional
 	@PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<EntityModel<Product>> deleteProducto(@PathVariable Integer id) {
+    public ResponseEntity<EntityModel<ProductoDto>> deleteProducto(@PathVariable Integer id) {
 
         try {
 
@@ -330,9 +334,9 @@ public class ProductController {
 
             productService.delete(productToDelete);
 
-            // Devolver el producto eliminado envuelto en un EntityModel, con enlace a la
-            // coleccion de productos
-            EntityModel<Product> entityModel = EntityModel.of(productToDelete,
+            // Devolver el DTO del producto eliminado envuelto en un EntityModel, con
+            // enlace a la coleccion de productos
+            EntityModel<ProductoDto> entityModel = EntityModel.of(productoMapper.toProductoDto(productToDelete),
                     linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
 
             return ResponseEntity.ok(entityModel);
