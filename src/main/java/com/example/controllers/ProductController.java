@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -38,7 +39,6 @@ import com.example.utilities.FileUtil;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 /**
  * La anotacion @RestController es para que todos los metodos que van a ser
@@ -77,8 +77,17 @@ public class ProductController {
 	 * Con HATEOAS cada respuesta lleva enlaces hipermedia ("_links"). Para no
 	 * repetir la construccion de los enlaces en cada metodo, esta centralizada en
 	 * el componente ProductoModelAssembler (RepresentationModelAssemblerSupport),
-	 * que envuelve cada ProductoDto en un EntityModel y le agrega los enlaces self
-	 * y all-products.
+	 * que envuelve cada ProductoDto en un EntityModel y le agrega:
+	 * 
+	 * - Los enlaces self (GET de un producto) y all-products (GET de la
+	 *   coleccion), generados dinamicamente a partir del controlador con
+	 *   linkTo(methodOn(...)).
+	 * - Los affordances de las operaciones que se le pueden aplicar al recurso:
+	 *   PUT (actualizar) y DELETE (eliminar) sobre cada producto, y POST
+	 *   (crear) sobre la coleccion. Se sirven con el media type HAL-FORMS.
+	 * - La paginacion: cuando dameProductos recibe page y size, el assembler
+	 *   construye un PagedModel con la metadata de la pagina ("page") y los
+	 *   enlaces de navegacion first, prev, self, next y last.
 	 */
 
 	/**
@@ -100,7 +109,6 @@ public class ProductController {
 			@RequestParam(name = "size", required = false) Integer size) {
 
 		Sort sort = Sort.by("name");
-		List<Product> products = null;
 
 		// Comprobar si en la peticion (request) me han suministrado los parametros page
 		// y size
@@ -108,20 +116,20 @@ public class ProductController {
 
 			Pageable pageable = PageRequest.of(page, size, sort);
 
-			// Implica devolver los productos paginados, es decir, una pagina de Product
-			products = productService.findAll(pageable).getContent();
+			// Respuesta paginada: PagedModel con la metadata de la pagina y los enlaces
+			// de navegacion first/prev/self/next/last, construidos por el assembler
+			Page<Product> paginaDeProductos = productService.findAll(pageable);
+			return productoModelAssembler.toPagedModel(paginaDeProductos);
 
 		} else {
 
 			// Devolver los productos ordenados, por nombre (name), por ejemplo
-			products = productService.findAll(sort);
-		}
+			List<Product> products = productService.findAll(sort);
 
-		// El assembler transforma cada Product en un EntityModel<ProductoDto> con sus
-		// enlaces self y all-products; aqui solo se agregan los enlaces de la coleccion
-		return productoModelAssembler.toCollectionModel(products)
-				.add(linkTo(methodOn(ProductController.class).dameProductos(page, size)).withSelfRel(),
-						linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
+			// Coleccion completa con los enlaces de coleccion (self y all-products +
+			// affordance POST para crear), construidos por el assembler
+			return productoModelAssembler.toColeccion(products);
+		}
 	}
 
 	/**
