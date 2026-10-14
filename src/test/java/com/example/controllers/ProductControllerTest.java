@@ -158,8 +158,7 @@ class ProductControllerTest {
 		// when => Realizar la peticion (request) HTTP, mediante el metodo GET
 		// al end point de products ("/products"). Aqui se utiliza MockMvc
 
-		ResultActions response = mockMvc
-				.perform(get("/products")
+		ResultActions response = mockMvc.perform(get("/products")
 				.accept(MediaType.APPLICATION_JSON)
 				.header("Authorization", this.token));
 		// then

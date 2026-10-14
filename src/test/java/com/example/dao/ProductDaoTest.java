@@ -1,6 +1,5 @@
 package com.example.dao;
 
-
 import static org.assertj.core.api.Assertions.*;
 
 import java.math.BigDecimal;
@@ -16,13 +15,28 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import com.example.entities.Presentation;
 import com.example.entities.Product;
 
-/* La anotacion siguiente solamente prueba las entidades y los repositorios de datos,
- * no levanta todo el contexto de Spring. Con esta anotacion no hace falta que los
- * metodos sean Transactionals porque ya se incluye por defecto. */
+/**
+ * Esta anotación se utiliza para realizar pruebas de la capa de persistencia,
+ * principalmente de las entidades JPA y los repositorios.
+ *
+ * Carga un contexto de Spring limitado a los componentes relacionados
+ * con JPA, en lugar de cargar toda la aplicación.
+ *
+ * Por defecto, las pruebas se ejecutan dentro de una transacción que
+ * se revierte al finalizar cada prueba. Por este motivo, normalmente
+ * no es necesario añadir @Transactional a cada método de prueba.
+ */
 @DataJpaTest
 
-/* Para indicar que cuando se termine de realizar el test la base de datos
- * se tiene que quedar como estaba incialmente, es decir, que se haga roll-back */
+/**
+ * Indica a Spring Boot que no sustituya la base de datos configurada
+ * por una base de datos embebida, como H2.
+ *
+ * Permite utilizar la base de datos configurada para las pruebas, por ejemplo PostgreSQL o MySQL.
+ *
+ * Importante: la base de datos configurada debe estar disponible y correctamente preparada.
+ * Además, @DataJpaTest no garantiza que los cambios realizados fuera de la transacción de prueba se reviertan.
+ */
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 class ProductDaoTest {
 	
