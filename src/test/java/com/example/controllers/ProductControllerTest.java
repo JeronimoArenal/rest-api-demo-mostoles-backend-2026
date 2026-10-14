@@ -102,7 +102,7 @@ class ProductControllerTest {
 				.build();
 
 		/** El objeto anterior,tiene que ser convertido a formato JSON, para lo cual utilizamos el ObjectMapper
-		 * que convierte a Strin el formato JSON
+		 * que convierte a String el formato JSON
 		 */
 		String jsonLLoginRequest = objectMapper.writeValueAsString(logginRequest);
 
