@@ -141,8 +141,9 @@ que la petición llegue al controlador: pueden identificar al usuario,
 establecer su autenticación y aplicar las reglas de acceso.
 
 En este proyecto, `WebSecurityConfig` registra `AuthTokenFilter` antes
-de `UsernamePasswordAuthenticationFilter`. Esto permite que el filtro
-JWT examine la cabecera de la petición antes de que continúe el
+de `UsernamePasswordAuthenticationFilter mediante addFilterBefore(). Esto permite que el filtro
+JWT examine la cabecera Authorization de la petición antes de que 
+ se evalúen las reglas de autorización de los endpoints protegidos y continúe el
 procesamiento habitual de Spring Security.
 
 ### Diagrama didáctico: una petición HTTP
@@ -290,37 +291,121 @@ La estructura exacta depende de `MessageResponse`.
     las autoridades.
 8.  Devuelve `JwtResponse` con token, ID, username, email y roles.
 
-### Diagrama de secuencia del login
+### Diagrama de flujo del login
 
-``` mermaid
-sequenceDiagram
-    participant C as Cliente
-    participant AC as AuthController
-    participant AM as AuthenticationManager
-    participant UDS as UserDetailsServiceImpl
-    participant DB as UserRepository
-    participant PE as PasswordEncoder
-    participant JWT as JwtUtils
-
-    C->>AC: POST /api/auth/signin (username, password)
-    AC->>AM: authenticate(credentials)
-    AM->>UDS: loadUserByUsername(username)
-    UDS->>DB: findByUsername(username)
-    DB-->>UDS: User
-    UDS-->>AM: UserDetailsImpl
-    AM->>PE: Verificar contraseña
-    PE-->>AM: Coincide / no coincide
-    alt Credenciales correctas
-        AM-->>AC: Authentication autenticado
-        AC->>JWT: generateJwtToken(authentication)
-        JWT-->>AC: JWT firmado
-        AC-->>C: JwtResponse(token, usuario, roles)
-    else Credenciales incorrectas
-        AM-->>AC: Excepción de autenticación
-        AC-->>C: Respuesta de error según configuración
-    end
+```text
+                   ┌──────────────────────────────┐
+                   │       Cliente / Postman      │
+                   │     POST /api/auth/signin    │
+                   │    username + password       │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │           Tomcat             │
+                   │     Recibe petición HTTP     │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │    Spring Security Filter    │
+                   │           Chain              │
+                   │ /api/auth/** → permitAll()   │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │        AuthController       │
+                   │    authenticateUser(...)    │
+                   │ Recibe las credenciales     │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │     AuthenticationManager   │
+                   │      authenticate(...)      │
+                   │ Inicia la autenticación     │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │  AuthenticationProvider     │
+                   │ Habitualmente,               │
+                   │ DaoAuthenticationProvider   │
+                   │ Coordina la validación      │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │     UserDetailsServiceImpl  │
+                   │   loadUserByUsername(...)   │
+                   │ Busca al usuario            │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │ UserRepository / JPA        │
+                   │ Consulta la base de datos   │
+                   │            MySQL             │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │       UserDetailsImpl       │
+                   │ Usuario, hash de contraseña │
+                   │ y authorities               │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │    PasswordEncoder (BCrypt) │
+                   │ Comprueba la contraseña     │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                        ┌───────────────────┐
+                        │ ¿Credenciales      │
+                        │ correctas?         │
+                        └─────────┬─────────┘
+                             No   │   Sí
+                    ┌─────────────┘   └──────────────┐
+                    ▼                                ▼
+       ┌────────────────────────┐      ┌──────────────────────────┐
+       │ Error de autenticación │      │ AuthenticationManager    │
+       │ No se genera el JWT    │      │ Devuelve Authentication  │
+       └────────────────────────┘      │ autenticado              │
+                                       └────────────┬─────────────┘
+                                                    │
+                                                    ▼
+                                       ┌──────────────────────────┐
+                                       │       AuthController     │
+                                       │ Guarda Authentication en │
+                                       │ SecurityContextHolder    │
+                                       └────────────┬─────────────┘
+                                                    │
+                                                    ▼
+                                       ┌──────────────────────────┐
+                                       │          JwtUtils        │
+                                       │ generateJwtToken(...)    │
+                                       │ Genera y firma el JWT    │
+                                       └────────────┬─────────────┘
+                                                    │
+                                                    ▼
+                                       ┌──────────────────────────┐
+                                       │        JwtResponse       │
+                                       │ Token + ID, username,    │
+                                       │ email y roles            │
+                                       └────────────┬─────────────┘
+                                                    │
+                                                    ▼
+                                       ┌──────────────────────────┐
+                                       │     Cliente / Postman    │
+                                       │       HTTP 200 OK        │
+                                       │ Recibe el JWT            │
+                                       └──────────────────────────┘
 ```
 
+**Cómo leer el flujo:** si las credenciales son incorrectas, la autenticación falla y no se genera el JWT. Si son correctas, el controlador genera el token y devuelve `JwtResponse` al cliente.
 ### Ejemplo de petición
 
 ``` http
@@ -359,46 +444,126 @@ GET /api/recurso-protegido
 Authorization: Bearer <JWT>
 ```
 
-### Secuencia de validación del token
+### Diagrama de flujo de una petición protegida
 
-``` mermaid
-sequenceDiagram
-    participant C as Cliente
-    participant F as AuthTokenFilter
-    participant J as JwtUtils
-    participant U as UserDetailsServiceImpl
-    participant R as UserRepository
-    participant S as Spring Security
-    participant API as Controlador
-
-    C->>F: Petición con Authorization: Bearer JWT
-    F->>J: validateJwtToken(token)
-    J-->>F: Válido / inválido
-
-    alt JWT válido
-        F->>J: getUsernameFromJwtToken(token)
-        J-->>F: username
-        F->>U: loadUserByUsername(username)
-        U->>R: findByUsername(username)
-        R-->>U: User
-        U-->>F: UserDetailsImpl + autoridades
-        F->>S: Guardar Authentication en SecurityContextHolder
-    else JWT ausente o inválido
-        F->>F: No establece autenticación JWT
-    end
-
-    F->>S: Continuar FilterChain
-    S->>S: Evaluar reglas de acceso
-    alt Acceso permitido
-        S->>API: Ejecutar petición
-        API-->>C: Respuesta del recurso
-    else Falta autenticación
-        S-->>C: 401 Unauthorized
-    else Faltan permisos
-        S-->>C: 403 Forbidden
-    end
+```text
+                   ┌──────────────────────────────┐
+                   │       Cliente / Postman      │
+                   │   GET /api/recurso-protegido │
+                   │ Authorization: Bearer <JWT>  │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │           Tomcat             │
+                   │     Recibe petición HTTP     │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │    Spring Security Filter    │
+                   │           Chain              │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────┐
+                   │        AuthTokenFilter       │
+                   │ Extrae JWT de Authorization │
+                   │ mediante parseJwt()         │
+                   └──────────────┬───────────────┘
+                                  │
+                                  ▼
+                        ┌───────────────────┐
+                        │ ¿Existe un JWT?    │
+                        └─────────┬─────────┘
+                             No   │   Sí
+                    ┌─────────────┘   └──────────────┐
+                    ▼                                ▼
+       ┌────────────────────────┐      ┌──────────────────────────┐
+       │ Continúa sin establecer│      │         JwtUtils         │
+       │ autenticación JWT      │      │ validateJwtToken(jwt)    │
+       └────────────┬───────────┘      │ Valida firma y expiración│
+                    │                  └────────────┬─────────────┘
+                    │                               │
+                    │                               ▼
+                    │                    ┌───────────────────────┐
+                    │                    │ ¿JWT válido?          │
+                    │                    └──────────┬────────────┘
+                    │                          No   │   Sí
+                    │                 ┌─────────────┘   └─────────────┐
+                    │                 ▼                               ▼
+                    │    ┌────────────────────────┐   ┌────────────────────────┐
+                    │    │ Continúa sin establecer│   │ JwtUtils               │
+                    │    │ autenticación JWT      │   │ Extrae username del JWT│
+                    │    └────────────┬───────────┘   └────────────┬───────────┘
+                    │                 │                            │
+                    │                 │                            ▼
+                    │                 │               ┌────────────────────────┐
+                    │                 │               │ UserDetailsServiceImpl │
+                    │                 │               │ Carga usuario y roles  │
+                    │                 │               └────────────┬───────────┘
+                    │                 │                            │
+                    │                 │                            ▼
+                    │                 │               ┌────────────────────────┐
+                    │                 │               │ UserRepository / MySQL │
+                    │                 │               │ Recupera los datos     │
+                    │                 │               └────────────┬───────────┘
+                    │                 │                            │
+                    │                 │                            ▼
+                    │                 │               ┌────────────────────────┐
+                    │                 │               │ AuthTokenFilter        │
+                    │                 │               │ Crea Authentication    │
+                    │                 │               │ con las authorities    │
+                    │                 │               └────────────┬───────────┘
+                    │                 │                            │
+                    │                 │                            ▼
+                    │                 │               ┌────────────────────────┐
+                    │                 │               │ SecurityContextHolder  │
+                    │                 │               │ Guarda la autenticación│
+                    │                 │               └────────────┬───────────┘
+                    │                 │                            │
+                    └─────────────────┴────────────────────────────┘
+                                           │
+                                           ▼
+                            ┌──────────────────────────────┐
+                            │ Spring Security              │
+                            │ Evalúa reglas de autorización│
+                            └──────────────┬───────────────┘
+                                           │
+                                           ▼
+                                 ┌────────────────────┐
+                                 │ ¿Acceso permitido? │
+                                 └─────────┬──────────┘
+                                      No   │   Sí
+                             ┌─────────────┘   └─────────────┐
+                             ▼                               ▼
+                ┌────────────────────────┐    ┌────────────────────────┐
+                │ ¿Está autenticado?     │    │    DispatcherServlet   │
+                └────────────┬───────────┘    │ Dirige la petición     │
+                       No    │    Sí          │ al controlador         │
+                ┌────────────┘    └──────┐     └────────────┬───────────┘
+                ▼                       ▼                  │
+   ┌────────────────────────┐ ┌───────────────────────┐   ▼
+   │ AuthEntryPointJwt      │ │ Acceso denegado       │ ┌──────────────────────┐
+   │ HTTP 401 Unauthorized  │ │ HTTP 403 Forbidden    │ │ Controller / Service │
+   └────────────────────────┘ └───────────────────────┘ │ Procesa la petición  │
+                                                        └──────────┬───────────┘
+                                                                   │
+                                                                   ▼
+                                                        ┌──────────────────────┐
+                                                        │ Respuesta HTTP       │
+                                                        │ 200 OK, datos, etc.  │
+                                                        └──────────────────────┘
 ```
 
+**Cómo leer el flujo:**
+1. `AuthTokenFilter` extrae el token de la cabecera `Authorization`.
+2. `JwtUtils` valida el token. Si es válido, se extrae el username.
+3. `UserDetailsServiceImpl` carga al usuario y sus autoridades desde la base de datos.
+4. `AuthTokenFilter` establece la autenticación en `SecurityContextHolder`.
+5. Spring Security evalúa las reglas de acceso. Si falta autenticación, normalmente devuelve `401`; si el usuario autenticado carece de permisos, devuelve `403`.
+
+**Importante:** `addFilterBefore()` coloca `AuthTokenFilter` antes de `UsernamePasswordAuthenticationFilter`, no necesariamente al principio de toda la cadena. Un JWT ausente o inválido no concede acceso por sí solo.
 ### Responsabilidad de cada paso
 
 1.  `AuthTokenFilter` intercepta la petición.

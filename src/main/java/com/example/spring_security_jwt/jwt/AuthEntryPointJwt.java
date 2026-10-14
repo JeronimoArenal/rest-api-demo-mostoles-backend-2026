@@ -12,6 +12,12 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+/**
+ * La misión principal es manejar los errores de autenticación cuando un usuario no autorizado
+ * intenta acceder a un recurso protegido. Responde cuando se necesita rechazar una petición por falta de autenticación.
+ * No valida directamente el JWT. Esa tarea corresponde a AuthTokenFilter y JwtUtils.
+ *
+ */
 @Component
 public class AuthEntryPointJwt implements AuthenticationEntryPoint {
 

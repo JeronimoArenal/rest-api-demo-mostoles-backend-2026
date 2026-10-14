@@ -23,6 +23,7 @@ public class UserDetailsImpl implements UserDetails {
     private final Collection<? extends GrantedAuthority> authorities;
 
 
+    //....................... Constructor .......................................
     public UserDetailsImpl(Long id, String username, String email, String password,
                            Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
@@ -32,8 +33,11 @@ public class UserDetailsImpl implements UserDetails {
         this.authorities = authorities;
     }
 
+    /* Convertimos la entidad User de JPA en un objeto UserDetailsImpl que Spring Security pueda entender. */
+    //....................... build .......................................
     public static UserDetailsImpl build(User user) {
-        List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
+        List<SimpleGrantedAuthority> authorities = user.getRoles()
+                .stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName().name()))
                 .toList();
 

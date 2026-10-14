@@ -65,9 +65,7 @@ public class AuthController {
     @PostMapping("/signup")
     @Operation(summary = "Registra un nuevo usuario en la aplicación")
     @SecurityRequirements({})
-    public ResponseEntity<?> registerUser(
-            @Valid @RequestBody SignupRequest signupRequest,
-            BindingResult validationResults) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signupRequest) {
 
         LOGGER.info("========== ENTRO EN /api/auth/signup ==========");
 
@@ -122,8 +120,7 @@ public class AuthController {
     @PostMapping("/signin")
     @Operation(summary = "Inicia sesión y devuelve el token JWT (Bearer)")
     @SecurityRequirements({})
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest, BindingResult
-            result) {
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(),
                         loginRequest.getPassword()));

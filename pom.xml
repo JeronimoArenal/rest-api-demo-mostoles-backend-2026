@@ -91,7 +91,6 @@
 		<!-- ===================================================== -->
 		<!-- Persistence                                             -->
 		<!-- ===================================================== -->
-
 		<!-- MySQL -->
 		<dependency>
 			<groupId>com.mysql</groupId>
@@ -114,7 +113,6 @@
 		<!-- ===================================================== -->
 		<!-- MapStruct                                               -->
 		<!-- ===================================================== -->
-
 		<dependency>
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
@@ -263,8 +261,8 @@
 
 				<configuration>
 					<release>${java.version}</release>
-					<annotationProcessorPaths>
 
+					<annotationProcessorPaths>
 						<!-- Lombok -->
 						<path>
 							<groupId>org.projectlombok</groupId>

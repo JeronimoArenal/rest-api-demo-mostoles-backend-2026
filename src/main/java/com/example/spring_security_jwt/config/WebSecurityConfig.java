@@ -32,7 +32,6 @@ public class WebSecurityConfig {
 
     /* recibe el JWT de las peticiones y lo valida. */
     /**
-     * PIEZA DEL RESOURCE SERVER:
      * Instancia el filtro que interceptará las peticiones HTTP normales de las APIs
      * para buscar el token y validarlo en cada request.
      */
@@ -43,10 +42,12 @@ public class WebSecurityConfig {
     }
 
     /**
-     * PIEZA DEL AUTHORIZATION SERVER:
      * El AuthenticationManager es el motor que procesa el login de las usuarios.
      * Lo inyecta aquí para poder usarlo en el controlador de login (AuthController)
      * cuando alguien introduce su usuario y contraseña por primera vez.
+     *
+     * Si Spring detecta el UserDetailsServiceImpl y PasswordEncoder y configura el proveedor correspondiente,
+     * no es necesario declarar DaoAuthenticationProvider.
      */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
@@ -54,7 +55,6 @@ public class WebSecurityConfig {
     }
 
     /**
-     * PIEZA DEL AUTHORIZATION SERVER:
      * Verifica criptográficamente que la contraseña que envía el usuario coincide con el hash guardado en la DB.
      */
     @Bean
@@ -82,7 +82,6 @@ public class WebSecurityConfig {
                 );
 
         /**
-         * ENLACE CLAVE DEL RESOURCE SERVER:
          * Filtro manual (authenticationJwtTokenFilter) justo ANTES del filtro estándar de Spring.
          * Esto garantiza que si la petición lleva un token, se procese, valide y registre al usuario
          * en el SecurityContext antes de evaluar si tiene permisos para entrar.

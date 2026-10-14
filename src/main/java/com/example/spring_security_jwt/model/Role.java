@@ -26,4 +26,8 @@ public class Role {
     @Enumerated(EnumType.STRING)
     private ERole name;
 
+    @ManyToMany(mappedBy = "roles")
+    @Builder.Default
+    private Set<User> users = new HashSet<>();
+
 }

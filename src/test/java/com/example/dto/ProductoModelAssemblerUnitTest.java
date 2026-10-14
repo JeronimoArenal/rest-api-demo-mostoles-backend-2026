@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -72,7 +73,9 @@ class ProductoModelAssemblerUnitTest {
 
 	/** Simula un usuario autenticado con los roles indicados (ROLE_ADMIN, ROLE_USER...). */
 	private void autenticarComo(String... roles) {
-		var authorities = java.util.Arrays.stream(roles).map(SimpleGrantedAuthority::new).toList();
+		var authorities = Arrays.stream(roles)
+				.map(SimpleGrantedAuthority::new)
+				.toList();
 		SecurityContextHolder.getContext()
 				.setAuthentication(new UsernamePasswordAuthenticationToken("admin", "123456", authorities));
 	}

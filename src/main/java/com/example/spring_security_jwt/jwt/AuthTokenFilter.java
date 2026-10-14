@@ -16,7 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * RESOURCE SERVER
+ * AuthTokenFilter extrae el token y solicita a JwtUtils que lo valide.
  *
  * Intercepta las peticiones -> Es un filtro HTTP:
  * En cada petición, busca el JWT, pide a JwtUtils que lo valide y, si es correcto,

@@ -19,11 +19,17 @@ import java.util.Date;
 
 /**
  * Fabrica y comprueba el JWT. Su misión es gestionar el token JWT.
+ *
+ * La misión es gestionar los tokens JWT de la aplicación: generarlos, extraer información de ellos
+ * y comprobar que son válidos..
+ *  1. Fabricar el Token (generateJwtToken)
+ *  2. Validar el Token (validateJwtToken)
+ *  3. Leer la Identidad del Token (getUsernameFromJwtToken)
  */
 @Component
 public class JwtUtils {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AuthEntryPointJwt.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtUtils.class);
 
     @Value("${demo.app.jwtSecret}")
     private String jwtSecret;
@@ -31,7 +37,7 @@ public class JwtUtils {
     @Value("${demo.app.jwtExpirationMs}")
     private int jwtExpirationMS;
 
-    // ===================== Generar un JWT =====================
+    // ===================== Genera un JWT para el usuario autenticado.=====================
     // Nuevo método que acepta los claims (roles) y el username
     public String generateJwtToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
@@ -44,19 +50,19 @@ public class JwtUtils {
                 .compact();
     }
 
+    // ================= Construye la clave criptográfica utilizada para firmar y verificar el token.=============
     private Key key(){
+
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
-
-    // ===================== Extraer el usuario del JWT =====================
+    // ===================== Extrae el nombre de usuario del token. =====================
     public String getUsernameFromJwtToken(String token){
         return Jwts.parser().verifyWith((SecretKey) key()).build()
                 .parseSignedClaims(token).getPayload().getSubject();
     }
 
-
-    // ===================== Validar el JWT =====================
+    // ===================== Comprueba que el token es válido y no ha expirado. =====================
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parser().verifyWith((SecretKey) key())
