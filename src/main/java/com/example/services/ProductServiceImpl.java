@@ -13,11 +13,14 @@ import com.example.entities.Product;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    // Hay que inyectar, por constructor, la dependencia de ProductDao
     private final ProductDao productDao;
+
+    //............................ Constructor .......................................
+    public ProductServiceImpl(ProductDao productDao) {
+        this.productDao = productDao;
+    }
 
     @Override
     public Page<Product> findAll(Pageable pageable) {
@@ -51,7 +54,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<Product> findByPresentationName(String nombrePresentacion) {
-        return productDao.findByPresentationName(nombrePresentacion);
+        return productDao.findByPresentation_Name(nombrePresentacion);
     }
 
 }

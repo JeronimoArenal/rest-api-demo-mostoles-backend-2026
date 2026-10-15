@@ -7,6 +7,7 @@ import com.example.entities.Presentation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -59,13 +60,14 @@ public interface ProductDao extends JpaRepository<Product, Integer> {
 
     Optional<Product> findByName(String name);
 
+//    @EntityGraph(attributePaths = "presentation")
+//    List<Product> findByPresentation_NameIgnoreCase(String nombrePresentacion);
 
-    @Query("""
-    select p
-    from Product p
-    left join fetch p.presentation
-    where lower(p.presentation.name) = lower(:nombrePresentacion)
-    """)
-    List<Product> findByPresentationName(@Param("nombrePresentacion") String nombrePresentacion);
+    @EntityGraph(attributePaths = "presentation")
+    List<Product> findByPresentation_Name(String nombrePresentacion);
+
+
+
+
 
 }

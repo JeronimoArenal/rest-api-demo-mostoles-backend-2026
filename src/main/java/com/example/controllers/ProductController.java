@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.example.dto.ProductResponse;
+import com.example.dto.ProductSearchResponse;
+import com.example.mapper.ProductMapper;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
@@ -41,6 +44,7 @@ import com.example.utilities.FileUtil;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * La anotacion @RestController es para que todos los metodos que van a ser
@@ -70,6 +74,7 @@ public class ProductController {
 	private final FileUploadUtil fileUploadUtil;
 	private final FileDownloadUtil fileDownloadUtil;
 	private final FileUtil fileUtil;
+	private final ProductMapper productMapper;
 
 	/**
 	 * 
@@ -447,40 +452,32 @@ public class ProductController {
         return responseEntity;
     }
 
-	// ............... findProductsByPresentationName ...............
-
+	// ............... findProductsByPresentationName ............................
 	@GetMapping("/presentation")
 	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-	public ResponseEntity<Map<String, Object>> findProductsByPresentationName(
-			@RequestParam("name") String nombrePresentacion) {
+	public ResponseEntity<ProductSearchResponse> findProductsByPresentationName(@RequestParam("name") String nombrePresentacion) {
 
-		Map<String, Object> response = new HashMap<>();
-
-		try {
-			List<Product> products =
-					productService.findByPresentationName(nombrePresentacion);
-
-			response.put("presentation", nombrePresentacion);
-			response.put("products", products);
-
-			if (products.isEmpty()) {
-				response.put("mensaje",
-						"No hay productos para la presentación: "
-								+ nombrePresentacion);
-
-				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-						.body(response);
-			}
-
-			response.put("mensaje", "Productos encontrados correctamente");
-
-			return ResponseEntity.ok(response);
-
-		} catch (DataAccessException e) {
-			response.put("error", "Error al consultar los productos");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(response);
+		if (nombrePresentacion == null || nombrePresentacion.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"El nombre de la presentación es obligatorio");
 		}
+
+		String nombre = nombrePresentacion.trim();
+		List<Product> products = productService.findByPresentationName(nombre);
+		List<ProductResponse> productResponses = productMapper.toResponseList(products);
+
+		if (productResponses.isEmpty()) {
+			ProductSearchResponse response = new ProductSearchResponse(
+					"No hay productos para la presentación: " + nombre,
+					nombre, productResponses);
+
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+		}
+
+		ProductSearchResponse response = new ProductSearchResponse(
+				"Productos encontrados correctamente", nombre, productResponses);
+
+		return ResponseEntity.ok(response);
 	}
 
 
