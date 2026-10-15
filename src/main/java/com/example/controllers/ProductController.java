@@ -455,30 +455,28 @@ public class ProductController {
 	// ............... findProductsByPresentationName ............................
 	@GetMapping("/presentation")
 	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-	public ResponseEntity<ProductSearchResponse> findProductsByPresentationName(@RequestParam("name") String nombrePresentacion) {
+	public ResponseEntity<ProductSearchResponse> findProductsByPresentationName(
+			@RequestParam("name") String presentationName) {
 
-		if (nombrePresentacion == null || nombrePresentacion.isBlank()) {
+		if (presentationName == null || presentationName.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"El nombre de la presentación es obligatorio");
 		}
 
-		String nombre = nombrePresentacion.trim();
+		String nombre = presentationName.trim();
 		List<Product> products = productService.findByPresentationName(nombre);
 		List<ProductResponse> productResponses = productMapper.toResponseList(products);
 
 		if (productResponses.isEmpty()) {
-			ProductSearchResponse response = new ProductSearchResponse(
-					"No hay productos para la presentación: " + nombre,
+			ProductSearchResponse response = new ProductSearchResponse("No hay productos para la presentación: " + nombre,
 					nombre, productResponses);
 
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 		}
-
-		ProductSearchResponse response = new ProductSearchResponse(
-				"Productos encontrados correctamente", nombre, productResponses);
+		ProductSearchResponse response = new ProductSearchResponse("Productos encontrados correctamente",
+				nombre, productResponses);
 
 		return ResponseEntity.ok(response);
 	}
-
 
 }

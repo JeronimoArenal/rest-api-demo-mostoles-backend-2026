@@ -15,5 +15,5 @@ public interface ProductService {
     Product save(Product product);
     void delete(Product product);
     List<Product> findAll();
-    List<Product> findByPresentationName(String nombrePresentacion);
+    List<Product> findByPresentationName(String presentationName);
 }

@@ -74,7 +74,7 @@ public class WebSecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Permite registrarse y loguearse sin token
+                        .requestMatchers("/api/auth/**", "/error").permitAll() // Permite registrarse y loguearse sin token
                         .anyRequest().authenticated()               // Todo lo demás requiere estar autenticado
                 );
 

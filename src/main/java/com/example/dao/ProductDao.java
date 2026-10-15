@@ -64,7 +64,7 @@ public interface ProductDao extends JpaRepository<Product, Integer> {
 //    List<Product> findByPresentation_NameIgnoreCase(String nombrePresentacion);
 
     @EntityGraph(attributePaths = "presentation")
-    List<Product> findByPresentation_Name(String nombrePresentacion);
+    List<Product> findByPresentation_Name(String presentationName);
 
 
 
