@@ -191,8 +191,7 @@ class ProductControllerTest {
 				    jsonStringProduct.getBytes());
 
 		try {
-				mockMvc
-				    .perform(multipart("/products")
+				mockMvc.perform(multipart("/products")
 					.file(bytesArrayProduct)
 					.file("file", null)
 					.header("Authorization", this.token))

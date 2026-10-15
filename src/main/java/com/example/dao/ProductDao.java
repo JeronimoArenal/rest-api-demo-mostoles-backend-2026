@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import com.example.entities.Product;
+import org.springframework.data.repository.query.Param;
 
 public interface ProductDao extends JpaRepository<Product, Integer> {
 
@@ -57,4 +58,14 @@ public interface ProductDao extends JpaRepository<Product, Integer> {
     public Product findById(int id);
 
     Optional<Product> findByName(String name);
+
+
+    @Query("""
+    select p
+    from Product p
+    left join fetch p.presentation
+    where lower(p.presentation.name) = lower(:nombrePresentacion)
+    """)
+    List<Product> findByPresentationName(@Param("nombrePresentacion") String nombrePresentacion);
+
 }

@@ -26,8 +26,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class WebSecurityConfig {
 
-    private final UserDetailsServiceImpl userDetailsService;
-    private final AuthEntryPointJwt authEntryPointJwt;
+    private final UserDetailsServiceImpl userDetailsService; /* Busca usuarios por username en UserRepository */
+    private final AuthEntryPointJwt authEntryPointJwt;  /* Construye una respuesta JSON */
     private final JwtUtils jwtUtils;    /* Genera/valida los JWT.*/
 
     /* recibe el JWT de las peticiones y lo valida. */

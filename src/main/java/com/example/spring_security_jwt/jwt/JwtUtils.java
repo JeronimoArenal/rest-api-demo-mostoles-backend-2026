@@ -55,7 +55,6 @@ public class JwtUtils {
                 .parseSignedClaims(token).getPayload().getSubject();
     }
 
-
     // ===================== Validar el JWT =====================
     public boolean validateJwtToken(String authToken) {
         try {

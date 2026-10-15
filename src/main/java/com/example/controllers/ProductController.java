@@ -141,8 +141,7 @@ public class ProductController {
 	//....................... findProductById .......................................
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-	public ResponseEntity<Map<String, Object>> findProductById(
-			@PathVariable(name = "id", required = true) int product_id) {
+	public ResponseEntity<Map<String, Object>> findProductById(@PathVariable(name = "id", required = true) int product_id) {
 
 		Map<String, Object> responseAsMap = new HashMap<>();
 		ResponseEntity<Map<String, Object>> responseEntity = null;
@@ -447,5 +446,42 @@ public class ProductController {
 
         return responseEntity;
     }
+
+	// ............... findProductsByPresentationName ...............
+
+	@GetMapping("/presentation")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+	public ResponseEntity<Map<String, Object>> findProductsByPresentationName(
+			@RequestParam("name") String nombrePresentacion) {
+
+		Map<String, Object> response = new HashMap<>();
+
+		try {
+			List<Product> products =
+					productService.findByPresentationName(nombrePresentacion);
+
+			response.put("presentation", nombrePresentacion);
+			response.put("products", products);
+
+			if (products.isEmpty()) {
+				response.put("mensaje",
+						"No hay productos para la presentación: "
+								+ nombrePresentacion);
+
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(response);
+			}
+
+			response.put("mensaje", "Productos encontrados correctamente");
+
+			return ResponseEntity.ok(response);
+
+		} catch (DataAccessException e) {
+			response.put("error", "Error al consultar los productos");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(response);
+		}
+	}
+
 
 }
