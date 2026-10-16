@@ -60,7 +60,7 @@ class ProductControllerIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    //....................... suarioAutenticadoPuedeListarProductosPorPresentacion ............................
+    //....................... usuarioAutenticadoPuedeListarProductosPorPresentacion ............................
     @Test
     @DisplayName("Listar productos: usuario autenticado")
     void usuarioAutenticadoPuedeListarProductosPorPresentacion()throws Exception {
